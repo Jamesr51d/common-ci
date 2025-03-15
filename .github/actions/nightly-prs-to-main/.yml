@@ -1,4 +1,4 @@
-name: 'Nightly Pull Requests'
+name: 'Nightly Pull Requests' 
 
 inputs:
   repo-name:
