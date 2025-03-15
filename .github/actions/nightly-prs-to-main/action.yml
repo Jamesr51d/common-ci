@@ -23,9 +23,9 @@ inputs:
     default: ''
   prs: # Comma-separated list of pull request IDs to build
     type: string
-secrets:
   token:
     required: true
+    type: string
   AcceptCHBrowserKey:
   AcceptCHHardwareKey:
   AcceptCHNoneKey:
