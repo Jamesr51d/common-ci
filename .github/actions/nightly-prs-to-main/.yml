@@ -1,0 +1,94 @@
+name: 'Nightly Pull Requests'
+
+inputs:
+  repo-name:
+    type: string
+    required: true
+  org-name:
+    type: string
+    default: '51Degrees'
+  user:
+    type: string
+    default: 'Automation51D'
+  email:
+    type: string
+    default: '51DCI@51degrees.com'
+  dryrun:
+    type: string
+    default: 'false'
+  cache-assets:
+    type: boolean
+  common-ci-ref:
+    type: string
+    default: ''
+  prs: # Comma-separated list of pull request IDs to build
+    type: string
+secrets:
+  token:
+    required: true
+  AcceptCHBrowserKey:
+  AcceptCHHardwareKey:
+  AcceptCHNoneKey:
+  AcceptCHPlatformKey:
+  ApiKey:
+  CsvUrl:
+  DeviceDetection:
+  DeviceDetectionUrl:
+  JavaGpgKeyPassphrase:
+  JavaPGP:
+  MavenSettings:
+  NPMAuthToken:
+  NginxCert:
+  NginxKey:
+  NginxJwtToken:
+  PypiToken:
+  TestBrowserResourceKey:
+  TestHardwareResourceKey:
+  TestLicenseKey:
+  TestNoSetHeaderResourceKey:
+  TestPlatformResourceKey:
+  TestPypiToken:
+  TestResourceKey:
+  TestSuperResourceKey:
+  UsePublishTests:
+  PearlLicense:
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Common
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.org-name }}/common-ci
+        path: common
+        ref: ${{ inputs.common-ci-ref }}
+        
+    - name: Get Pull Requests
+      id: get_pull_requests
+      env:
+        PULL_REQUEST_IDS: ${{ inputs.prs }}
+      run: |
+        ./nightly-pull-requests.get-prs.ps1 `
+        -RepoName ${{ inputs.repo-name }} `
+        -OrgName ${{ inputs.org-name }} `
+        -Branch ${{ github.ref_name }} `
+        -GitHubToken ${{ secrets.token }} `
+        -GitHubOutput $Env:GITHUB_OUTPUT
+
+    - name: Process PRs (Matrix Strategy)
+      uses: ./.github/workflows/nightly-pull-request.yml
+      with:
+        repo-name: ${{ inputs.repo-name }}
+        org-name: ${{ inputs.org-name }}
+        pull-request-id: ${{ matrix.pr_id }}
+        user: ${{ inputs.user }}
+        email: ${{ inputs.email }}
+        dryrun: ${{ inputs.dryrun }}
+        cache-assets: ${{ inputs.cache-assets }}
+        common-ci-ref: ${{ inputs.common-ci-ref }}
+      secrets: inherit
+      strategy:
+        matrix:
+          pr_id: ${{ fromJSON(steps.get_prs.outputs.pull_request_ids) }}
+
+      
